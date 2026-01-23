@@ -1,3 +1,46 @@
-LangGraph is a library for building stateful, multi-actor LLM applications.
-It extends LangChain by enabling cyclic graphs and shared state.
-LangGraph is commonly used to build agent workflows.
+LangGraph is a Python library designed for building stateful, multi-actor LLM applications.
+It extends the LangChain ecosystem by enabling developers to define workflows as graphs instead of linear chains.
+These graphs can contain cycles, conditional branching, and shared state, making LangGraph suitable for building agents.
+
+One of the key advantages of LangGraph is its ability to manage state across multiple steps.
+This allows agents to remember intermediate results, track decisions, and coordinate between different tools or sub-agents.
+State management is critical in complex applications such as planning, reasoning, and multi-step problem solving.
+
+LangChain, on the other hand, provides the foundational abstractions for LLM applications.
+It includes prompt templates, language model wrappers, document loaders, vector stores, and retrievers.
+LangGraph builds on top of LangChain but focuses more on orchestration and control flow.
+
+Retrieval-Augmented Generation (RAG) is a popular technique used to improve the accuracy of LLM responses.
+In RAG systems, external knowledge is retrieved from a database and injected into the prompt before generating an answer.
+This reduces hallucinations and allows models to answer questions based on private or up-to-date data.
+
+A typical RAG pipeline consists of document ingestion, text chunking, embedding generation, vector storage, retrieval, and response generation.
+Each step in the pipeline plays an important role in the overall quality of the system.
+Poor chunking or retrieval strategies can lead to irrelevant context being passed to the language model.
+
+Chunking is the process of splitting large documents into smaller, semantically meaningful pieces.
+Smaller chunks improve retrieval precision but may lose context, while larger chunks preserve context but may introduce noise.
+Choosing the right chunk size and overlap is a critical design decision in RAG systems.
+
+Vector databases such as FAISS, Chroma, and Pinecone are commonly used in RAG architectures.
+These databases store embeddings and allow efficient similarity search.
+FAISS is often used for local development because it is fast, lightweight, and does not require external infrastructure.
+
+Cybersecurity is an important field concerned with protecting systems, networks, and data from digital attacks.
+It includes topics such as network security, application security, cryptography, and incident response.
+Although cybersecurity is unrelated to LangGraph, it may appear in the same document when data is not well separated.
+
+In real-world datasets, documents often contain mixed topics.
+For example, a company knowledge base may include information about software architecture, security policies, HR guidelines, and deployment procedures.
+Without proper chunking and metadata, retrieval systems may return irrelevant information.
+
+Large Language Models are increasingly being used in cybersecurity for tasks such as log analysis, threat detection, and security policy summarization.
+However, LLMs must be carefully constrained to avoid leaking sensitive information or producing insecure recommendations.
+
+Agent-based systems combine LLMs with tools, memory, and decision-making logic.
+LangGraph enables developers to build such systems by modeling agent behavior as a graph.
+Each node in the graph represents a step, tool call, or reasoning action.
+
+In summary, LangGraph is best suited for building complex, stateful agent workflows.
+RAG complements such systems by grounding them in external knowledge.
+Both techniques are powerful, but they must be designed carefully to avoid noisy outputs and unintended behavior.
