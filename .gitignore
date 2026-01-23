@@ -1,0 +1,12 @@
+# Poetry virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Vector store (generated)
+faiss_index/
