@@ -6,7 +6,7 @@ authors = [
     {name = "sathwik-reddy-m",email = "sathwikreddym79@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "langchain (>=1.2.6,<2.0.0)",
     "langchain-core (>=1.2.7,<2.0.0)",
@@ -14,7 +14,10 @@ dependencies = [
     "langgraph (>=1.0.7,<2.0.0)",
     "openai (>=2.15.0,<3.0.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
-    "pydantic (>=2.12.5,<3.0.0)"
+    "pydantic (>=2.12.5,<3.0.0)",
+    "langchain-openai (>=1.1.7,<2.0.0)",
+    "sentence-transformers (>=5.2.0,<6.0.0)",
+    "faiss-cpu (>=1.13.2,<2.0.0)"
 ]
 
 [tool.poetry]
