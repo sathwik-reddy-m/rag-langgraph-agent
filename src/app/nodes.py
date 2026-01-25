@@ -2,6 +2,23 @@ from app.state import GraphState
 from app.retriever import retrieve_documents
 from app.generator import generate_answer
 
+def decide_retrieval_node(state: GraphState) -> dict:
+    """
+    Decide whether retrieval is needed for the given query.
+    """
+
+    query = state.query.lower()
+
+    # Simple heuristic (can be replaced with LLM later)
+    needs_retrieval = not any(
+        phrase in query
+        for phrase in ["hi", "hello", "who are you", "what can you do"]
+    )
+
+    return {
+        "needs_retrieval": needs_retrieval
+    }
+
 def retrieve_node(state: GraphState) -> dict:
     """
     LangGraph node that retrieves relevant documents
