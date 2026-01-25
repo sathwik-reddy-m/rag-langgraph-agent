@@ -18,7 +18,7 @@ def ingest_documents():
     splitter = SemanticChunker(
         embeddings=embeddings,
         breakpoint_threshold_type="percentile",
-        breakpoint_threshold_amount=64,
+        breakpoint_threshold_amount=30,
     )
 
     chunks = splitter.split_documents(documents)

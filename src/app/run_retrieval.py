@@ -10,3 +10,4 @@ if __name__ == "__main__":
     for i, doc in enumerate(docs, 1):
         print(f"\n--- Result {i} ---")
         print(doc.page_content)
+
