@@ -1,5 +1,6 @@
 from app.state import GraphState
 from app.retriever import retrieve_documents
+from app.generator import generate_answer
 
 def retrieve_node(state: GraphState) -> dict:
     """
@@ -20,3 +21,22 @@ def retrieve_node(state: GraphState) -> dict:
     return {
         "retrieved_docs": contents
     }
+
+def generate_node(state: GraphState) -> dict:
+    """
+    LangGraph node that generates an answer
+    using retrieved documents as context.
+    """
+
+    # 1. Read from state
+    query = state.query
+    documents = state.retrieved_docs or []
+
+    # 2. Call existing generation logic
+    answer = generate_answer(query, documents)
+
+    # 3. Return partial state update
+    return {
+        "answer": answer
+    }
+
