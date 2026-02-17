@@ -11,3 +11,5 @@ class GraphState(BaseModel):
     answer: Optional[str] = None
     needs_retrieval: Optional[bool] = None
     intent: Optional[str] = None 
+    needs_web_search: Optional[bool] = None
+

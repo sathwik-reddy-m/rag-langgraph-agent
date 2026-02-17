@@ -58,7 +58,8 @@ def retrieve_node(state: GraphState) -> dict:
 
     # 4. Return partial state update
     return {
-        "retrieved_docs": contents
+        "retrieved_docs": contents,
+        "needs_web_search": len(contents) == 0,
     }
 
 def generate_node(state: GraphState) -> dict:
