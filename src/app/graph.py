@@ -22,7 +22,7 @@ def build_graph():
     # conditional routing
     graph.add_conditional_edges(
         "decide", 
-        lambda state: "retrieve" if state["needs_retrieval"] else "generate",
+        lambda state: "retrieve" if state.needs_retrieval else "generate",
     )
 
     graph.add_edge("retrieve", "generate")

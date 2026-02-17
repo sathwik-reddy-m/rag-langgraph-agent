@@ -1,19 +1,35 @@
 from app.state import GraphState
 from app.retriever import retrieve_documents
 from app.generator import generate_answer
+from langchain_groq import ChatGroq
 
 def decide_retrieval_node(state: GraphState) -> dict:
     """
-    Decide whether retrieval is needed for the given query.
+    Use an LLM to decide whether retrieval is needed.
     """
 
-    query = state.query.lower()
-
-    # Simple heuristic (can be replaced with LLM later)
-    needs_retrieval = not any(
-        phrase in query
-        for phrase in ["hi", "hello", "who are you", "what can you do"]
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0,
     )
+
+    prompt = f"""
+You are a routing agent.
+
+Decide whether the following user query requires
+external knowledge retrieval to answer.
+
+Reply with ONLY one word:
+- YES (if retrieval is needed)
+- NO (if retrieval is NOT needed)
+
+Query:
+{state.query}
+"""
+    
+    response = llm.invoke(prompt).content.strip().upper()
+
+    needs_retrieval = response == "YES"
 
     return {
         "needs_retrieval": needs_retrieval
