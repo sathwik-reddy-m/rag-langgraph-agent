@@ -2,6 +2,7 @@ from app.state import GraphState
 from app.retriever import retrieve_documents
 from app.generator import generate_answer
 from langchain_groq import ChatGroq
+from tavily import TavilyClient
 
 def decide_retrieval_node(state: GraphState) -> dict:
     """
@@ -100,4 +101,28 @@ User:
 
     return {
         "answer": answer
+    }
+
+def web_search_node(state: GraphState) -> dict:
+    """
+    Perform web search when local knowledge is insufficient.
+    """
+
+    client = TavilyClient()
+
+    results = client.search(
+        query=state.query,
+        search_depth="basic",
+        max_results=5,
+    )
+
+    # Extract text content
+    contents = [
+        item["content"]
+        for item in results.get("results", [])
+        if "content" in item
+    ]
+
+    return {
+        "retrieved_docs": contents
     }
