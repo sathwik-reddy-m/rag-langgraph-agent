@@ -10,3 +10,4 @@ class GraphState(BaseModel):
     retrieved_docs: Optional[list[str]] = None
     answer: Optional[str] = None
     needs_retrieval: Optional[bool] = None
+    intent: Optional[str] = None 
