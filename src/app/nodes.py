@@ -78,3 +78,26 @@ def generate_node(state: GraphState) -> dict:
         "answer": answer
     }
 
+def conversational_fallback_node(state: GraphState) -> dict:
+    """
+    Handle greetings and small talk.
+    """
+
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0.7,
+    )
+
+    prompt = f"""
+You are a friendly AI assistant.
+Respond naturally and briefly to the user.
+
+User:
+{state.query}
+"""
+
+    answer = llm.invoke(prompt).content.strip()
+
+    return {
+        "answer": answer
+    }
