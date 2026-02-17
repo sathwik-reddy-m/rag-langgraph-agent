@@ -5,7 +5,10 @@ from langchain_groq import ChatGroq
 
 def decide_retrieval_node(state: GraphState) -> dict:
     """
-    Use an LLM to decide whether retrieval is needed.
+    Decide user intent:
+    - knowledge
+    - conversation
+    - greeting
     """
 
     llm = ChatGroq(
@@ -14,25 +17,27 @@ def decide_retrieval_node(state: GraphState) -> dict:
     )
 
     prompt = f"""
-You are a routing agent.
+Classify the user's query into ONE category.
 
-Decide whether the following user query requires
-external knowledge retrieval to answer.
+Categories:
+- greeting (hi, hello, thanks, etc.)
+- conversation (who are you, how are you, general chat)
+- knowledge (requires external knowledge)
 
 Reply with ONLY one word:
-- YES (if retrieval is needed)
-- NO (if retrieval is NOT needed)
+greeting
+conversation
+knowledge
 
 Query:
 {state.query}
 """
-    
-    response = llm.invoke(prompt).content.strip().upper()
 
-    needs_retrieval = response == "YES"
+    intent = llm.invoke(prompt).content.strip().lower()
 
     return {
-        "needs_retrieval": needs_retrieval
+        "intent": intent,
+        "needs_retrieval": intent == "knowledge",
     }
 
 def retrieve_node(state: GraphState) -> dict:
