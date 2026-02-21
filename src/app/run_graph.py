@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     # 2. Create initial state
     initial_state = GraphState(
-        query="What is LangGraph?"
+        query="Who is the longest serving Oracle CEO?"
     )
 
     # 3. Run the graph

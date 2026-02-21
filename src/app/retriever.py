@@ -19,6 +19,6 @@ def retrieve_documents(query: str, k: int = 3):
     )
 
     # 3. Perform similarity search
-    documents = vectorstore.similarity_search(query, k=k)
+    docs_with_scores = vectorstore.similarity_search_with_score(query, k=3)
 
-    return documents
+    return docs_with_scores

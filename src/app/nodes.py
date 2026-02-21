@@ -4,6 +4,13 @@ from app.generator import generate_answer
 from langchain_groq import ChatGroq
 from tavily import TavilyClient
 
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
+
 def decide_retrieval_node(state: GraphState) -> dict:
     """
     Decide user intent:
@@ -51,15 +58,22 @@ def retrieve_node(state: GraphState) -> dict:
     query = state.query
 
     # 2. Call existing retrieval logic
-    docs = retrieve_documents(query)
+    docs_with_scores = retrieve_documents(query)
 
     # 3. Extract raw text content
-    contents = [doc.page_content for doc in docs]
+    threshold = 1.0
+    filtered_docs = []
+    scores = []
+
+    for doc, score in docs_with_scores:
+        scores.append(score)
+        if score < threshold:
+            filtered_docs.append(doc.page_content)
 
     # 4. Return partial state update
     return {
-        "retrieved_docs": contents,
-        "needs_web_search": len(contents) == 0,
+        "retrieved_docs": filtered_docs,
+        "needs_web_search": len(filtered_docs) == 0,
     }
 
 def generate_node(state: GraphState) -> dict:
