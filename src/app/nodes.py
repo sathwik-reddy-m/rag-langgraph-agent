@@ -4,41 +4,38 @@ from app.generator import generate_answer
 from langchain_groq import ChatGroq
 from tavily import TavilyClient
 
-from dotenv import load_dotenv
-from pathlib import Path
-import os
-
-env_path = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(dotenv_path=env_path)
-
 def decide_retrieval_node(state: GraphState) -> dict:
-    """
-    Decide user intent:
-    - knowledge
-    - conversation
-    - greeting
-    """
-
     llm = ChatGroq(
         model="llama-3.1-8b-instant",
         temperature=0,
     )
 
+    history = "\n".join((state.chat_history or [])[-6:])
+
     prompt = f"""
-Classify the user's query into ONE category.
+You are an intent classifier for a RAG system.
 
-Categories:
-- greeting (hi, hello, thanks, etc.)
-- conversation (who are you, how are you, general chat)
-- knowledge (requires external knowledge)
+Classify the user query into ONE of the following categories:
 
-Reply with ONLY one word:
-greeting
-conversation
-knowledge
+1. greeting → simple hello, thanks, etc.
+2. followup → refers to something mentioned earlier in the conversation
+3. knowledge → requires external factual knowledge or new topic
 
-Query:
+Rules:
+- If the query depends on previous conversation context, classify as followup.
+- If the query introduces a new topic or entity, classify as knowledge.
+- If unsure, prefer knowledge.
+
+Conversation so far:
+{history}
+
+User query:
 {state.query}
+
+Reply with only one word:
+greeting
+followup
+knowledge
 """
 
     intent = llm.invoke(prompt).content.strip().lower()
@@ -47,6 +44,7 @@ Query:
         "intent": intent,
         "needs_retrieval": intent == "knowledge",
     }
+
 
 def retrieve_node(state: GraphState) -> dict:
     """
@@ -89,9 +87,17 @@ def generate_node(state: GraphState) -> dict:
     # 2. Call existing generation logic
     answer = generate_answer(query, documents)
 
+    history = state.chat_history or []  
+
+    updated_history = history + [
+        f"User: {query}",
+        f"Assistant: {answer}"
+    ]
+
     # 3. Return partial state update
     return {
-        "answer": answer
+        "answer": answer,
+        "chat_history": updated_history
     }
 
 def conversational_fallback_node(state: GraphState) -> dict:
@@ -104,18 +110,32 @@ def conversational_fallback_node(state: GraphState) -> dict:
         temperature=0.7,
     )
 
+    history = state.chat_history or []
+    formatted_history = "\n".join(history[-6:]) #small window
+
     prompt = f"""
-You are a friendly AI assistant.
-Respond naturally and briefly to the user.
+You are a helpful conversational AI assistant.
+
+Conversation so far:
+{formatted_history}
 
 User:
 {state.query}
+
+If the question refers to something earlier, infer it from the conversation.
+Respond naturally and briefly.
 """
 
     answer = llm.invoke(prompt).content.strip()
 
+    updated_history = history + [
+        f"User: {state.query}",
+        f"Assistant: {answer}"
+    ]
+
     return {
-        "answer": answer
+        "answer": answer,
+        "chat_history": updated_history
     }
 
 def web_search_node(state: GraphState) -> dict:

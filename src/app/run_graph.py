@@ -1,3 +1,9 @@
+from dotenv import load_dotenv
+from pathlib import Path
+
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
+
 from app.graph import build_graph
 from app.state import GraphState
 
@@ -5,15 +11,27 @@ if __name__ == "__main__":
     # 1. Build the graph
     graph = build_graph()
 
+    print("\n🤖 RAG Assistant Started!")
+    print("Type your question below.")
+    print("Type 'exit' or 'quit' to end the conversation.\n")
+
     # 2. Create initial state
-    initial_state = GraphState(
-        query="Who is the longest serving Oracle CEO?"
+    state = GraphState(
+        query="",
+        chat_history=[]
     )
 
-    # 3. Run the graph
-    final_state = graph.invoke(initial_state)
+    while True:
 
-    # 4. Print results
-    print("\nQuestion:", initial_state.query)
-    print("\nAnswer:\n", final_state["answer"])
+        query= input("\nYou: ")
+        if query.lower() in ["exit","quit"]:
+            break
+
+        state.query = query
+
+        final_state = graph.invoke(state)
+
+        print("\nAssistant:", final_state["answer"])
+        
+        state.chat_history = final_state.get("chat_history",state.chat_history)
 

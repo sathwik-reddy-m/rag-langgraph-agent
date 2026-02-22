@@ -12,4 +12,4 @@ class GraphState(BaseModel):
     needs_retrieval: Optional[bool] = None
     intent: Optional[str] = None 
     needs_web_search: Optional[bool] = None
-
+    chat_history: Optional[list[str]] = None

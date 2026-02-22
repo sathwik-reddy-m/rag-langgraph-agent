@@ -1,10 +1,3 @@
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Always load .env from project root
-env_path = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(dotenv_path=env_path)
-
 from langchain_groq import ChatGroq
 
 def generate_answer(query: str, documents: list[str]) -> str:
