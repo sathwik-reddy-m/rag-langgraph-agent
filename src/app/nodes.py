@@ -68,10 +68,21 @@ def retrieve_node(state: GraphState) -> dict:
         if score < threshold:
             filtered_docs.append(doc.page_content)
 
+    # ---- Confidence-based fallback ----
+    if not scores:
+        needs_web_search = True
+        best_score = None
+    else:
+        best_score = min(scores)
+        needs_web_search = best_score > 0.95  # fallback if weak match
+
+    print("DEBUG → best_score:", best_score)
+    print("DEBUG → needs_web_search:", needs_web_search)
+
     # 4. Return partial state update
     return {
         "retrieved_docs": filtered_docs,
-        "needs_web_search": len(filtered_docs) == 0,
+        "needs_web_search": needs_web_search,
     }
 
 def generate_node(state: GraphState) -> dict:
@@ -89,11 +100,11 @@ def generate_node(state: GraphState) -> dict:
 
     history = state.chat_history or []  
 
-    updated_history = history + [
+    updated_history = (history + [
         f"User: {query}",
         f"Assistant: {answer}"
-    ]
-
+    ])[-10:] # keep last 10 turns only
+ 
     # 3. Return partial state update
     return {
         "answer": answer,
@@ -128,10 +139,10 @@ Respond naturally and briefly.
 
     answer = llm.invoke(prompt).content.strip()
 
-    updated_history = history + [
+    updated_history = (history + [
         f"User: {state.query}",
         f"Assistant: {answer}"
-    ]
+    ])[-10:] # keep last 10 turns only
 
     return {
         "answer": answer,
@@ -142,6 +153,7 @@ def web_search_node(state: GraphState) -> dict:
     """
     Perform web search when local knowledge is insufficient.
     """
+    print("DEBUG → Web search triggered")
 
     client = TavilyClient()
 
@@ -159,5 +171,5 @@ def web_search_node(state: GraphState) -> dict:
     ]
 
     return {
-        "retrieved_docs": contents
+        "retrieved_docs": contents,
     }
