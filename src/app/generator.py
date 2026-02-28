@@ -27,3 +27,29 @@ Question:
     response = llm.invoke(prompt)
     return response.content
 
+
+def stream_answer(query: str, documents: list[str]):
+
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0,
+        streaming=True,
+    )
+
+    context = "\n\n".join(documents)
+
+    prompt = f"""
+You are a helpful assistant.
+Answer the question using the context below.
+
+Context:
+{context}
+
+Question:
+{query}
+"""
+
+    for chunk in llm.stream(prompt):
+        if chunk.content:
+            yield chunk.content
+

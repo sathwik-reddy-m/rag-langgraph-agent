@@ -11,6 +11,10 @@ from uuid import uuid4
 
 from app.graph import build_graph
 from app.state import GraphState
+from app.generator import stream_answer
+
+from fastapi.responses import StreamingResponse
+import json
 
 app = FastAPI(title="RAG Assistant API")
 
@@ -65,6 +69,45 @@ def chat(request: ChatRequest):
         answer = final_state["answer"],
         source = final_state.get("source")
     )
+
+# -------- Chat Stream Endpoint --------
+@app.post("/chat/stream")
+def chat_stream(request: ChatRequest):
+
+    if request.session_id is None:
+        session_id = str(uuid4())
+        sessions[session_id] = GraphState(query="",chat_history=[])
+    else:
+        session_id = request.session_id
+        if session_id not in sessions:
+            sessions[session_id] = GraphState(query="",chat_history=[])
+    
+    state = sessions[session_id]
+    state.query = request.message
+
+    def token_generator():
+        state.query = request.message
+
+        # First run routing + retrieval (without generation)
+        partial_state = graph.invoke(state)
+
+        documents = partial_state.get("retrieved_docs", [])
+
+        full_answer = ""
+
+        for token in stream_answer(request.message, documents):
+            full_answer += token
+            yield token
+
+        # After streaming completes → update memory
+        history = state.chat_history or []
+        updated_history = history + [
+            f"User: {request.message}",
+            f"Assistant: {full_answer}"
+        ]
+        state.chat_history = updated_history
+
+    return StreamingResponse(token_generator(), media_type="text/plain")
 
 # -------- Reset Endpoint --------
 @app.post("/reset")
