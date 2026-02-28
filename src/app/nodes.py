@@ -68,18 +68,49 @@ def retrieve_node(state: GraphState) -> dict:
         if score < threshold:
             filtered_docs.append(doc.page_content)
 
+    # --- Intelligent Routing Logic ---
+    time_sensitive_keywords = [
+        "current",
+        "latest",
+        "today",
+        "recent",
+        "breaking",
+        "now",
+        "news",
+        "present",
+        "who is current",
+    ]
+
+    is_time_sensitive = any(word in query for word in time_sensitive_keywords)
+
+
+
     # ---- Confidence-based fallback ----
     if not scores:
-        needs_web_search = True
         best_score = None
+        # No vector knowledge available
+        if is_time_sensitive:
+            needs_web_search = True
+        else:
+            needs_web_search = False
     else:
         best_score = min(scores)
-        needs_web_search = best_score > 0.95  # fallback if weak match
+
+        if best_score <= 0.95:
+            # Strong local match
+            needs_web_search = False
+        else:
+            # Weak local match
+            if is_time_sensitive:
+                needs_web_search = True
+            else:
+                # Let LLM answer directly
+                needs_web_search = False
 
     print("DEBUG → best_score:", best_score)
+    print("DEBUG → time_sensitive:", is_time_sensitive)
     print("DEBUG → needs_web_search:", needs_web_search)
 
-    # 4. Return partial state update
     return {
         "retrieved_docs": filtered_docs,
         "needs_web_search": needs_web_search,
