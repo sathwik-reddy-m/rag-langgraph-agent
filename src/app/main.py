@@ -60,14 +60,13 @@ def chat(request: ChatRequest):
     # 3. Run graph
     final_state = graph.invoke(state)
 
-    # 4. Save updated memory
-    state.chat_history = final_state.get("chat_history", state.chat_history)
+    # 4. Store full state, not only chat_history
+    sessions[session_id] = GraphState(**final_state)
 
     # 5. Return JSON response
     return ChatResponse(
         session_id = session_id,
-        answer = final_state["answer"],
-        source = final_state.get("source")
+        answer = final_state["answer"]
     )
 
 # -------- Chat Stream Endpoint --------
@@ -100,12 +99,12 @@ def chat_stream(request: ChatRequest):
             yield token
 
         # After streaming completes → update memory
-        history = state.chat_history or []
-        updated_history = history + [
+        history = sessions[session_id].chat_history or []
+
+        sessions[session_id].chat_history = history + [
             f"User: {request.message}",
-            f"Assistant: {full_answer}"
+            f"Assistant: {full_answer}",
         ]
-        state.chat_history = updated_history
 
     return StreamingResponse(token_generator(), media_type="text/plain")
 
