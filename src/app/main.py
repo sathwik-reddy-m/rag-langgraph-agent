@@ -1,4 +1,5 @@
 import redis
+import time
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -58,77 +59,86 @@ class ChatResponse(BaseModel):
 def health():
     return {"status": "ok"}
 
-# -------- Chat Endpoint --------
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+def run_chat(session_id: str, message: str) -> GraphState:
+    """
+    Shared chat execution pipeline.
+    Handles:
+    - session loading
+    - graph execution
+    - state persistence
+    """
 
-    # 1. Create new session if needed
-    session_id = request.session_id or str(uuid4())
-
+    # 1. Load session
     state = load_session(session_id)
 
+    # 2. Create new state if missing
     if state is None:
         state = GraphState(
             query="",
             chat_history=[]
         )
 
-    # 2. Update query
-    state.query = request.message
+    # 3. Update query
+    state.query = message
 
-    # 3. Run graph
+    # 4. Run graph
     final_state = graph.invoke(state)
 
-    # 4. Store full state, not only chat_history
-    save_session(
-        session_id,
-        GraphState(**final_state)
+    # 5. Persist full state
+    updated_state = GraphState(**final_state)
+
+    save_session(session_id, updated_state)
+
+    return updated_state
+
+
+def fake_stream(text: str):
+    """
+    Simulate streaming response chunk-by-chunk.
+    """
+
+    words = text.split()
+
+    for word in words:
+        yield word + " "
+        time.sleep(0.03)
+
+# -------- Chat Endpoint --------
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest):
+
+    session_id = request.session_id or str(uuid4())
+
+    final_state = run_chat(
+        session_id=session_id,
+        message=request.message
     )
 
-    # 5. Return JSON response
     return ChatResponse(
-        session_id = session_id,
-        answer = final_state["answer"]
+        session_id=session_id,
+        answer=final_state.answer
     )
 
 # -------- Chat Stream Endpoint --------
 @app.post("/chat/stream")
 def chat_stream(request: ChatRequest):
 
-    if request.session_id is None:
-        session_id = str(uuid4())
-        sessions[session_id] = GraphState(query="",chat_history=[])
-    else:
-        session_id = request.session_id
-        if session_id not in sessions:
-            sessions[session_id] = GraphState(query="",chat_history=[])
-    
-    state = sessions[session_id]
-    state.query = request.message
+    session_id = request.session_id or str(uuid4())
 
-    def token_generator():
-        state.query = request.message
+    final_state = run_chat(
+        session_id=session_id,
+        message=request.message
+    )
 
-        # First run routing + retrieval (without generation)
-        partial_state = graph.invoke(state)
+    answer = final_state.answer
 
-        documents = partial_state.get("retrieved_docs", [])
-
-        full_answer = ""
-
-        for token in stream_answer(request.message, documents):
-            full_answer += token
-            yield token
-
-        # After streaming completes → update memory
-        history = sessions[session_id].chat_history or []
-
-        sessions[session_id].chat_history = history + [
-            f"User: {request.message}",
-            f"Assistant: {full_answer}",
-        ]
-
-    return StreamingResponse(token_generator(), media_type="text/plain")
+    return StreamingResponse(
+        fake_stream(answer),
+        media_type="text/plain",
+        headers={
+            "X-Session-Id": session_id
+        }
+    )
 
 # -------- Reset Endpoint --------
 @app.post("/reset")
