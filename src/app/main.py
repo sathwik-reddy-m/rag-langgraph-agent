@@ -1,3 +1,4 @@
+import redis
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -18,10 +19,29 @@ import json
 
 app = FastAPI(title="RAG Assistant API")
 
+redis_client = redis.Redis(
+    host="localhost",
+    port="6379",
+    decode_responses=True,
+)
+
+def save_session(session_id: str, state: GraphState):
+    redis_client.set(
+        session_id,
+        state.model_dump_json()
+    )
+
+
+def load_session(session_id: str) -> GraphState | None:
+    data = redis_client.get(session_id)
+
+    if data is None:
+        return None
+
+    return GraphState.model_validate_json(data)
+
 graph = build_graph()
 
-# Simple in-memory session store
-sessions = {}
 
 # -------- Request Models --------
 class ChatRequest(BaseModel):
@@ -43,16 +63,15 @@ def health():
 def chat(request: ChatRequest):
 
     # 1. Create new session if needed
-    if request.session_id is None:
-        session_id = str(uuid4())
-        sessions[session_id] = GraphState(query= "",chat_history=[])
-    else:
-        session_id = request.session_id
+    session_id = request.session_id or str(uuid4())
 
-        if session_id not in sessions:
-            sessions[session_id] = GraphState(query= "",chat_history=[])
+    state = load_session(session_id)
 
-    state = sessions[session_id]
+    if state is None:
+        state = GraphState(
+            query="",
+            chat_history=[]
+        )
 
     # 2. Update query
     state.query = request.message
@@ -61,7 +80,10 @@ def chat(request: ChatRequest):
     final_state = graph.invoke(state)
 
     # 4. Store full state, not only chat_history
-    sessions[session_id] = GraphState(**final_state)
+    save_session(
+        session_id,
+        GraphState(**final_state)
+    )
 
     # 5. Return JSON response
     return ChatResponse(

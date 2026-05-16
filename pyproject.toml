@@ -22,7 +22,8 @@ dependencies = [
     "langchain-groq (>=1.1.1,<2.0.0)",
     "tavily-python (>=0.7.21,<0.8.0)",
     "fastapi (>=0.134.0,<0.135.0)",
-    "uvicorn (>=0.41.0,<0.42.0)"
+    "uvicorn (>=0.41.0,<0.42.0)",
+    "redis (>=7.4.0,<8.0.0)"
 ]
 
 [tool.poetry]
