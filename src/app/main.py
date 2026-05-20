@@ -16,6 +16,7 @@ from app.state import GraphState
 from app.generator import stream_answer
 
 from fastapi.responses import StreamingResponse
+from app.retriever_store import initialize_retriever
 import json
 
 app = FastAPI(title="RAG Assistant API")
@@ -40,6 +41,18 @@ def load_session(session_id: str) -> GraphState | None:
         return None
 
     return GraphState.model_validate_json(data)
+
+
+def reset_turn_state(state: GraphState) -> None:
+    """
+    Clear fields that belong to the current graph turn only.
+    """
+    state.retrieved_docs = None
+    state.answer = None
+    state.needs_retrieval = None
+    state.intent = None
+    state.needs_web_search = None
+
 
 graph = build_graph()
 
@@ -80,9 +93,13 @@ def run_chat(session_id: str, message: str) -> GraphState:
 
     # 3. Update query
     state.query = message
+    reset_turn_state(state)
 
     # 4. Run graph
     final_state = graph.invoke(state)
+
+    print("DEBUG → final_state:", final_state)
+    print("DEBUG → final chat_history:", final_state.get("chat_history"))
 
     # 5. Persist full state
     updated_state = GraphState(**final_state)
@@ -102,6 +119,14 @@ def fake_stream(text: str):
     for word in words:
         yield word + " "
         time.sleep(0.03)
+
+@app.on_event("startup")
+def startup_event():
+    """
+    Initialize shared application resources.
+    """
+
+    initialize_retriever()
 
 # -------- Chat Endpoint --------
 @app.post("/chat", response_model=ChatResponse)
@@ -146,4 +171,3 @@ def reset(session_id: str):
     if session_id in sessions:
         del sessions[session_id]
     return {"status": "reset successful"}
-
